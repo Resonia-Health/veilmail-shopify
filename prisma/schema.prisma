@@ -1,0 +1,182 @@
+// Veil Mail Shopify App Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Shopify session storage
+model Session {
+  id            String   @id
+  shop          String
+  state         String
+  isOnline      Boolean  @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+}
+
+// Store installations
+model Store {
+  id              String   @id @default(cuid())
+  shopifyDomain   String   @unique
+  shopifyId       String   @unique
+  accessToken     String?
+  veilApiKey      String?
+  veilAudienceId  String?
+  isActive        Boolean  @default(true)
+  installedAt     DateTime @default(now())
+  uninstalledAt   DateTime?
+
+  // Settings
+  enableOrderEmails     Boolean @default(true)
+  enableAbandonedCart   Boolean @default(false)
+  abandonedCartDelay    Int     @default(24) // hours
+  enableReviewRequests  Boolean @default(false)
+  reviewRequestDelay    Int     @default(7) // days after delivery
+
+  // Relations
+  emailTemplates  EmailTemplate[]
+  emailLogs       EmailLog[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Email templates configured for store
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  // Template configuration
+  type        EmailTemplateType
+  name        String
+  subject     String
+  veilTemplateId String?
+  isEnabled   Boolean  @default(true)
+
+  // Customization
+  fromName    String?
+  replyTo     String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([storeId, type])
+}
+
+enum EmailTemplateType {
+  ORDER_CONFIRMATION
+  SHIPPING_NOTIFICATION
+  DELIVERY_CONFIRMATION
+  ORDER_CANCELLED
+  REFUND_CONFIRMATION
+  ABANDONED_CART
+  WELCOME
+  PASSWORD_RESET
+  REVIEW_REQUEST
+}
+
+// Email sending logs
+model EmailLog {
+  id          String   @id @default(cuid())
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  // Email details
+  veilEmailId String?
+  type        EmailTemplateType
+  toEmail     String
+  subject     String
+  status      EmailStatus @default(PENDING)
+
+  // Shopify context
+  orderId     String?
+  customerId  String?
+  checkoutId  String?
+
+  // Response
+  errorMessage String?
+  sentAt       DateTime?
+  deliveredAt  DateTime?
+  openedAt     DateTime?
+  clickedAt    DateTime?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([storeId, type])
+  @@index([storeId, status])
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  FAILED
+}
+
+// Abandoned checkouts tracking
+model AbandonedCheckout {
+  id          String   @id @default(cuid())
+  storeId     String
+
+  // Shopify checkout data
+  checkoutId  String   @unique
+  customerId  String?
+  email       String
+  cartTotal   Decimal
+  currency    String
+  lineItems   Json
+
+  // Recovery status
+  isRecovered Boolean @default(false)
+  emailSent   Boolean @default(false)
+  emailSentAt DateTime?
+  recoveredAt DateTime?
+
+  // Timing
+  abandonedAt DateTime
+  scheduledAt DateTime
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([storeId, isRecovered])
+  @@index([scheduledAt])
+}
+
+// Scheduled review requests
+model ReviewRequest {
+  id          String   @id @default(cuid())
+  storeId     String
+
+  // Order data
+  orderId     String   @unique
+  email       String
+  customerName String?
+  lineItems   Json
+
+  // Status
+  emailSent   Boolean  @default(false)
+  emailSentAt DateTime?
+
+  // Timing
+  scheduledAt DateTime
+  deliveredAt DateTime
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([storeId, emailSent])
+  @@index([scheduledAt])
+}

@@ -1,0 +1,40 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+name = "Veil Mail"
+client_id = "YOUR_CLIENT_ID"
+application_url = "https://your-app-url.com"
+embedded = true
+
+[access_scopes]
+# Scopes needed for email functionality
+scopes = "read_customers,write_customers,read_orders,write_orders,read_products"
+
+[auth]
+redirect_urls = ["https://your-app-url.com/auth/callback"]
+
+[webhooks]
+api_version = "2024-10"
+
+  [webhooks.subscriptions]
+    # Customer webhooks for sync
+    [[webhooks.subscriptions.topics]]
+    topics = ["customers/create", "customers/update"]
+    uri = "/webhooks"
+
+    # Order webhooks for transactional emails
+    [[webhooks.subscriptions.topics]]
+    topics = ["orders/create", "orders/fulfilled", "orders/cancelled"]
+    uri = "/webhooks"
+
+    # Checkout webhooks for abandoned cart
+    [[webhooks.subscriptions.topics]]
+    topics = ["checkouts/create", "checkouts/update"]
+    uri = "/webhooks"
+
+    # App lifecycle webhooks
+    [[webhooks.subscriptions.topics]]
+    topics = ["app/uninstalled"]
+    uri = "/webhooks"
+
+[pos]
+embedded = false
