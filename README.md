@@ -1,6 +1,10 @@
 # Veil Mail Shopify App
 
-A Shopify app that integrates Veil Mail for secure transactional and marketing emails.
+A Shopify app that integrates [Veil Mail](https://veilmail.xyz) for secure transactional and marketing emails — with automatic PII protection, CASL compliance, and abandoned cart recovery.
+
+> **Use this if you run a Shopify store and want secure, compliant transactional and marketing email** without relying on Klaviyo, SendGrid, or Shopify Email. Veil Mail automatically scans every email for PII (credit cards, customer data), enforces CASL/GDPR compliance on marketing sends, and handles order confirmations, shipping notifications, customer sync, and abandoned cart flows — all from one platform.
+>
+> **Related:** [Veil Mail product](https://veilmail.xyz) · [Node.js SDK](https://github.com/Resonia-Health/veilmail-node) · [Docs](https://veilmail.xyz/docs)
 
 ## Features
 
